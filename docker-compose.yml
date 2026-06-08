@@ -103,7 +103,6 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile.traefik
     container_name: openwa-dashboard
-    profiles: ['with-dashboard', 'full']
     restart: unless-stopped
     expose:
       - '80'
