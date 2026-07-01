@@ -102,6 +102,8 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile.traefik
+      args:
+        - VITE_API_URL=${SERVICE_URL_OPENWA_API}
     container_name: openwa-dashboard
     restart: unless-stopped
     expose:
