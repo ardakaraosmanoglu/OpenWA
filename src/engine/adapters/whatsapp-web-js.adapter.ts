@@ -78,9 +78,12 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           path.join(userDataDir, 'Default', 'SingletonLock'),
         ];
         for (const lockFile of lockFiles) {
-          if (fs.existsSync(lockFile)) {
-            this.logger.log(`Removing stale Chromium lock file: ${lockFile}`);
+          try {
+            fs.lstatSync(lockFile);
+            this.logger.log(`Removing stale Chromium lock file/symlink: ${lockFile}`);
             fs.unlinkSync(lockFile);
+          } catch (e) {
+            // File or symlink doesn't exist, which is the expected case
           }
         }
       } catch (err) {
