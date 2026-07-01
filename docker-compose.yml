@@ -179,12 +179,16 @@ services:
 
 volumes:
   openwa-data:
+    name: openwa-data
     driver: local
   postgres-data:
+    name: openwa-postgres-data
     driver: local
   redis-data:
+    name: openwa-redis-data
     driver: local
   minio-data:
+    name: openwa-minio-data
     driver: local
 
 networks:
