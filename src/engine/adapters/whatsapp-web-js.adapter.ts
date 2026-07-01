@@ -126,6 +126,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
           headless: this.config.puppeteer?.headless ?? true,
           args: puppeteerArgs,
           executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+          dumpio: true,
         },
       });
 
