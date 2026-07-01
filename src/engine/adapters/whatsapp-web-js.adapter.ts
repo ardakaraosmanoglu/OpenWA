@@ -70,7 +70,7 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
 
     try {
       // Build puppeteer args, including proxy if configured
-      const puppeteerArgs = this.config.puppeteer?.args || [
+      const puppeteerArgs = [...(this.config.puppeteer?.args || [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -78,7 +78,18 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
-      ];
+      ])];
+
+      // Ensure critical Docker flags are present to prevent crashes
+      if (!puppeteerArgs.includes('--no-sandbox')) {
+        puppeteerArgs.push('--no-sandbox');
+      }
+      if (!puppeteerArgs.includes('--disable-setuid-sandbox')) {
+        puppeteerArgs.push('--disable-setuid-sandbox');
+      }
+      if (!puppeteerArgs.includes('--disable-dev-shm-usage')) {
+        puppeteerArgs.push('--disable-dev-shm-usage');
+      }
 
       // Add proxy configuration if provided
       if (this.config.proxy) {
