@@ -2,7 +2,20 @@
 // Centralized API client with TypeScript types
 
 export const apiEnv = import.meta.env.VITE_API_URL;
-export const API_BASE_URL = apiEnv ? (apiEnv.endsWith('/') ? `${apiEnv}api` : `${apiEnv}/api`) : '/api';
+let normalizedUrl = '';
+if (apiEnv) {
+  if (!/^https?:\/\//i.test(apiEnv)) {
+    const protocol = typeof window !== 'undefined' && window.location.protocol === 'http:' ? 'http:' : 'https:';
+    normalizedUrl = `${protocol}//${apiEnv}`;
+  } else {
+    normalizedUrl = apiEnv;
+  }
+  if (normalizedUrl.endsWith('/')) {
+    normalizedUrl = normalizedUrl.slice(0, -1);
+  }
+}
+export const cleanApiUrl = normalizedUrl;
+export const API_BASE_URL = cleanApiUrl ? `${cleanApiUrl}/api` : '/api';
 
 // =============================================================================
 // Types
