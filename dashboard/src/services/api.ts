@@ -1,7 +1,8 @@
 // API Service Layer for OpenWA Dashboard
 // Centralized API client with TypeScript types
 
-const API_BASE_URL = '/api';
+const apiEnv = import.meta.env.VITE_API_URL;
+const API_BASE_URL = apiEnv ? (apiEnv.endsWith('/') ? `${apiEnv}api` : `${apiEnv}/api`) : '/api';
 
 // =============================================================================
 // Types
