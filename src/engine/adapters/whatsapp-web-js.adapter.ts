@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   IWhatsAppEngine,
   EngineStatus,
@@ -69,6 +70,23 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     this.setStatus(EngineStatus.INITIALIZING);
 
     try {
+      // Clean up stale Chromium SingletonLock files to prevent launch errors
+      try {
+        const userDataDir = path.resolve(this.config.sessionDataPath, `session-${this.config.sessionId}`);
+        const lockFiles = [
+          path.join(userDataDir, 'SingletonLock'),
+          path.join(userDataDir, 'Default', 'SingletonLock'),
+        ];
+        for (const lockFile of lockFiles) {
+          if (fs.existsSync(lockFile)) {
+            this.logger.log(`Removing stale Chromium lock file: ${lockFile}`);
+            fs.unlinkSync(lockFile);
+          }
+        }
+      } catch (err) {
+        this.logger.warn('Failed to check/remove stale Chromium lock files', { error: String(err) });
+      }
+
       // Build puppeteer args, including proxy if configured
       const puppeteerArgs = [...(this.config.puppeteer?.args || [
         '--no-sandbox',
