@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { Request } from 'express';
 import { ApiKey, ApiKeyRole } from '../entities/api-key.entity';
 import { Session } from '../../session/entities/session.entity';
@@ -8,8 +8,8 @@ import { Session } from '../../session/entities/session.entity';
 @Injectable()
 export class OwnershipGuard implements CanActivate {
   constructor(
-    @InjectRepository(Session, 'data')
-    private readonly sessionRepository: Repository<Session>,
+    @InjectDataSource('data')
+    private readonly dataSource: DataSource,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -25,7 +25,7 @@ export class OwnershipGuard implements CanActivate {
       return true;
     }
 
-    const session = await this.sessionRepository.findOne({ where: { id: sessionId } });
+    const session = await this.dataSource.getRepository(Session).findOne({ where: { id: sessionId } });
     if (!session) {
       return true;
     }

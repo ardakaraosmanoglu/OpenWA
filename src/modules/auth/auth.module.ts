@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiKey } from './entities/api-key.entity';
-import { Session } from '../session/entities/session.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AuthValidateController } from './auth-validate.controller';
@@ -12,7 +11,7 @@ import { OwnershipGuard } from './guards/ownership.guard';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([ApiKey], 'main'), TypeOrmModule.forFeature([Session], 'data')],
+  imports: [TypeOrmModule.forFeature([ApiKey], 'main')],
   controllers: [AuthController, AuthValidateController],
   providers: [
     AuthService,
