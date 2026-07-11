@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableIndex } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddSessionOwner1780000000000 implements MigrationInterface {
   name = 'AddSessionOwner1780000000000';
@@ -9,42 +9,30 @@ export class AddSessionOwner1780000000000 implements MigrationInterface {
     const hasTable = await queryRunner.hasTable('sessions');
     if (!hasTable) return;
 
+    const isPostgres = queryRunner.connection.options.type === 'postgres';
     const hasColumn = await queryRunner.hasColumn('sessions', 'ownerApiKeyId');
+
     if (!hasColumn) {
-      await queryRunner.addColumn(
-        'sessions',
-        new TableColumn({
-          name: 'ownerApiKeyId',
-          type: 'varchar',
-          length: '36',
-          isNullable: true,
-        }),
-      );
+      if (isPostgres) {
+        await queryRunner.query(`ALTER TABLE "sessions" ADD COLUMN IF NOT EXISTS "ownerApiKeyId" varchar(36)`);
+      } else {
+        await queryRunner.query(`ALTER TABLE "sessions" ADD COLUMN "ownerApiKeyId" varchar(36)`);
+      }
     }
 
-    const table = await queryRunner.getTable('sessions');
-    const indexExists = table?.indices.some(i => i.name === this.indexName);
-    if (!indexExists) {
-      await queryRunner.createIndex(
-        'sessions',
-        new TableIndex({ name: this.indexName, columnNames: ['ownerApiKeyId'] }),
-      );
-    }
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "${this.indexName}" ON "sessions" ("ownerApiKeyId")`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const hasTable = await queryRunner.hasTable('sessions');
     if (!hasTable) return;
 
-    const table = await queryRunner.getTable('sessions');
-    const indexExists = table?.indices.some(i => i.name === this.indexName);
-    if (indexExists) {
-      await queryRunner.dropIndex('sessions', this.indexName);
-    }
+    await queryRunner.query(`DROP INDEX IF EXISTS "${this.indexName}"`);
 
+    const isPostgres = queryRunner.connection.options.type === 'postgres';
     const hasColumn = await queryRunner.hasColumn('sessions', 'ownerApiKeyId');
-    if (hasColumn) {
-      await queryRunner.dropColumn('sessions', 'ownerApiKeyId');
+    if (hasColumn && isPostgres) {
+      await queryRunner.query(`ALTER TABLE "sessions" DROP COLUMN IF EXISTS "ownerApiKeyId"`);
     }
   }
 }
