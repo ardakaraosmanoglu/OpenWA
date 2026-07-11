@@ -147,7 +147,7 @@
 }
 
 .response-status.success {
-  background: rgba(37, 211, 102, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary);
 }
 

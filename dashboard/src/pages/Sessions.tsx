@@ -240,19 +240,7 @@ export function Sessions() {
         </div>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: '#FEE2E2',
-            padding: '1rem',
-            borderRadius: '8px',
-            color: '#DC2626',
-            marginBottom: '1rem',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className="sessions-error">{error}</div>}
 
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
@@ -322,7 +310,7 @@ export function Sessions() {
                 <span className="session-name">{qrData.sessionName}</span>
               </div>
               <button className="btn-close" onClick={() => setQrData(null)} aria-label={t('common.close')}>
-                <X size={20} color="#64748b" />
+                <X size={20} />
               </button>
             </div>
             <div className="modal-body" style={{ textAlign: 'center' }}>
