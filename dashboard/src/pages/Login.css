@@ -94,9 +94,8 @@
 }
 
 .logo-icon {
-  width: auto;
-  height: 52px;
-  max-width: 220px;
+  width: 84px;
+  height: 84px;
   object-fit: contain;
 }
 

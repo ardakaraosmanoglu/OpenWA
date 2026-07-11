@@ -50,7 +50,7 @@ export function Login({ onLogin }: LoginProps) {
     <div className="login-container">
       <div className="login-card">
         <div className="login-logo">
-          <img src="/raxana-logo.webp" alt="Raxana Software" className="logo-icon" />
+          <img src="/raxana-icon.png" alt="Raxana Software" className="logo-icon" />
           <span className="login-product">{t('common.appSubtitle')}</span>
           <span className="version-info">
             {t('login.version', {
