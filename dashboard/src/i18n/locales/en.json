@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "OpenWA",
-    "appSubtitle": "WhatsApp API",
+    "appName": "Raxana Software",
+    "appSubtitle": "WhatsApp Integration Panel",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -78,7 +78,7 @@
     "connectionError": "Unable to connect to server. Please try again.",
     "help": "Need help?",
     "viewDocs": "View Documentation",
-    "footer": "Made with ❤️ by Yudhi Armyndharis and the OpenWA Community",
+    "footer": "© Raxana Software",
     "version": "v{{version}} · {{date}}"
   },
   "dashboard": {

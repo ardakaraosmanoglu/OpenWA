@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "OpenWA",
-    "appSubtitle": "ממשק WhatsApp API",
+    "appName": "Raxana Software",
+    "appSubtitle": "ממשק אינטגרציית WhatsApp",
     "loading": "טוען...",
     "save": "שמירה",
     "cancel": "ביטול",
@@ -78,7 +78,7 @@
     "connectionError": "לא ניתן להתחבר לשרת. יש לנסות שוב.",
     "help": "צריך עזרה?",
     "viewDocs": "לצפייה בתיעוד",
-    "footer": "נבנה באהבה על ידי Yudhi Armyndharis וקהילת OpenWA",
+    "footer": "© Raxana Software",
     "version": "v{{version}} · {{date}}"
   },
   "dashboard": {
