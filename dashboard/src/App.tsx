@@ -94,21 +94,32 @@ function AppContent() {
     return <Suspense fallback={loadingFallback}><Login onLogin={handleLogin} /></Suspense>;
   }
 
+  const isCustomer = role === 'customer';
+
   return (
     <ToastProvider>
       <BrowserRouter>
         <Suspense fallback={loadingFallback}>
         <Routes>
           <Route path="/" element={<Layout onLogout={handleLogout} userRole={role} />}>
-            <Route index element={<Dashboard />} />
-            <Route path="sessions" element={<Sessions />} />
-            <Route path="webhooks" element={<Webhooks />} />
-            {role === 'admin' && <Route path="api-keys" element={<ApiKeys />} />}
-            <Route path="logs" element={<Logs />} />
-            <Route path="message-tester" element={<MessageTester />} />
-            <Route path="infrastructure" element={<Infrastructure />} />
-            {role === 'admin' && <Route path="plugins" element={<Plugins />} />}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {isCustomer ? (
+              <>
+                <Route index element={<Sessions />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            ) : (
+              <>
+                <Route index element={<Dashboard />} />
+                <Route path="sessions" element={<Sessions />} />
+                <Route path="webhooks" element={<Webhooks />} />
+                {role === 'admin' && <Route path="api-keys" element={<ApiKeys />} />}
+                <Route path="logs" element={<Logs />} />
+                <Route path="message-tester" element={<MessageTester />} />
+                <Route path="infrastructure" element={<Infrastructure />} />
+                {role === 'admin' && <Route path="plugins" element={<Plugins />} />}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
           </Route>
         </Routes>
         </Suspense>

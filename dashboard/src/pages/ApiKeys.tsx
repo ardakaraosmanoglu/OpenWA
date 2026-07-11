@@ -14,7 +14,7 @@ import { useApiKeysQuery, useCreateApiKeyMutation, useDeleteApiKeyMutation, useR
 import { PageHeader } from '../components/PageHeader';
 import './ApiKeys.css';
 
-const roleNames = ['admin', 'operator', 'viewer'] as const;
+const roleNames = ['admin', 'operator', 'viewer', 'customer'] as const;
 
 function useWindowSize() {
   const [width, setWidth] = useState(window.innerWidth);
@@ -37,7 +37,11 @@ export function ApiKeys() {
   const revokeMutation = useRevokeApiKeyMutation();
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
-  const [newKey, setNewKey] = useState({ name: '', role: 'operator' });
+  const [newKey, setNewKey] = useState<{ name: string; role: string; maxSessions: number }>({
+    name: '',
+    role: 'operator',
+    maxSessions: 1,
+  });
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'revoke'; id: string; name: string } | null>(
@@ -56,9 +60,13 @@ export function ApiKeys() {
   const handleCreate = async () => {
     if (!newKey.name) return;
     try {
-      const created = await createMutation.mutateAsync({ name: newKey.name, role: newKey.role });
+      const created = await createMutation.mutateAsync({
+        name: newKey.name,
+        role: newKey.role,
+        ...(newKey.role === 'customer' ? { maxSessions: newKey.maxSessions } : {}),
+      });
       setCreatedKey(created.apiKey || null);
-      setNewKey({ name: '', role: 'operator' });
+      setNewKey({ name: '', role: 'operator', maxSessions: 1 });
     } catch (err) {
       console.error('Failed to create:', err);
     }
@@ -269,10 +277,21 @@ export function ApiKeys() {
                   <select value={newKey.role} onChange={e => setNewKey({ ...newKey, role: e.target.value })}>
                     {roleNames.map(r => (
                       <option key={r} value={r}>
-                        {t(`apiKeys.roles.${r}`)}
+                        {t(`apiKeys.roles.${r}`, { defaultValue: r })}
                       </option>
                     ))}
                   </select>
+                  {newKey.role === 'customer' && (
+                    <>
+                      <label>{t('apiKeys.maxSessionsLabel', { defaultValue: 'Max sessions' })}</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={newKey.maxSessions}
+                        onChange={e => setNewKey({ ...newKey, maxSessions: Math.max(1, Number(e.target.value) || 1) })}
+                      />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -330,7 +349,7 @@ export function ApiKeys() {
             {roleNames.map(r => (
               <div key={r} className="perm-item">
                 <code>{r}</code>
-                <span>{t(`apiKeys.roleDescriptions.${r}`)}</span>
+                <span>{t(`apiKeys.roleDescriptions.${r}`, { defaultValue: '' })}</span>
               </div>
             ))}
           </div>

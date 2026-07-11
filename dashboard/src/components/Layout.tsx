@@ -49,7 +49,10 @@ export function Layout({ onLogout, userRole }: LayoutProps) {
   const ThemeIcon = themeIcons[theme];
   const themeLabel = t(`theme.${theme}`);
 
-  const navItems = allNavItems.filter(item => !item.adminOnly || userRole === 'admin');
+  const navItems =
+    userRole === 'customer'
+      ? [{ to: '/', icon: Smartphone, key: 'sessions' as const, adminOnly: false }]
+      : allNavItems.filter(item => !item.adminOnly || userRole === 'admin');
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);

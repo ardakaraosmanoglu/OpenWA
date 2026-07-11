@@ -56,9 +56,10 @@ export interface ApiKey {
   id: string;
   name: string;
   keyPrefix: string;
-  role: 'admin' | 'user' | 'readonly';
+  role: 'admin' | 'operator' | 'viewer' | 'customer';
   allowedIps?: string[];
   allowedSessions?: string[];
+  maxSessions?: number;
   isActive: boolean;
   expiresAt?: string;
   lastUsedAt?: string;
@@ -243,6 +244,7 @@ export const apiKeyApi = {
     role: string;
     allowedIps?: string[];
     allowedSessions?: string[];
+    maxSessions?: number;
     expiresAt?: string;
   }) =>
     request<ApiKey>('/auth/api-keys', {
