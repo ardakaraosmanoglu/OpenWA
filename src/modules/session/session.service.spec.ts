@@ -13,6 +13,7 @@ function createMockSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'sess-uuid-1',
     name: 'test-session',
+    ownerApiKeyId: null,
     status: SessionStatus.CREATED,
     phone: null,
     pushName: null,
@@ -141,7 +142,7 @@ describe('SessionService', () => {
       const result = await service.findAll();
 
       expect(result).toHaveLength(2);
-      expect(repository.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+      expect(repository.find).toHaveBeenCalledWith({ where: {}, order: { createdAt: 'DESC' } });
     });
   });
 
