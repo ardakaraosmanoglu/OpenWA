@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { DateTransformer } from '../../../common/transformers/date.transformer';
 import { jsonColumnType, dateColumnType } from '../../../common/utils/column-types';
 
@@ -19,6 +19,10 @@ export class Session {
 
   @Column({ type: 'varchar', length: 100, unique: true })
   name: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  ownerApiKeyId: string | null;
 
   @Column({
     type: 'varchar',
