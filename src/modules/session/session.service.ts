@@ -9,6 +9,7 @@ import {
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
 import { Session, SessionStatus } from './entities/session.entity';
+import { ApiKey, ApiKeyRole } from '../auth/entities/api-key.entity';
 import { CreateSessionDto } from './dto';
 import { EngineFactory } from '../../engine/engine.factory';
 import { IWhatsAppEngine, EngineStatus } from '../../engine/interfaces/whatsapp-engine.interface';
@@ -90,7 +91,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     this.reconnectStates.clear();
   }
 
-  async create(dto: CreateSessionDto): Promise<Session> {
+  async create(dto: CreateSessionDto, ownerApiKeyId?: string | null): Promise<Session> {
     // Check if session with same name exists
     const existing = await this.sessionRepository.findOne({
       where: { name: dto.name },
@@ -105,6 +106,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
       config: dto.config || {},
       proxyUrl: dto.proxyUrl || null,
       proxyType: dto.proxyType || null,
+      ownerApiKeyId: ownerApiKeyId ?? null,
       status: SessionStatus.CREATED,
     });
 
@@ -125,10 +127,16 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     return saved;
   }
 
-  async findAll(): Promise<Session[]> {
+  async findAll(apiKey?: ApiKey): Promise<Session[]> {
+    const where = apiKey?.role === ApiKeyRole.CUSTOMER ? { ownerApiKeyId: apiKey.id } : {};
     return this.sessionRepository.find({
+      where,
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async countByOwner(ownerApiKeyId: string): Promise<number> {
+    return this.sessionRepository.count({ where: { ownerApiKeyId } });
   }
 
   async findOne(id: string): Promise<Session> {
@@ -493,7 +501,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
   /**
    * Get overall session statistics for multi-session monitoring
    */
-  async getStats(): Promise<{
+  async getStats(apiKey?: ApiKey): Promise<{
     total: number;
     active: number;
     ready: number;
@@ -501,18 +509,19 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     byStatus: Record<string, number>;
     memoryUsage: { heapUsed: number; heapTotal: number; rss: number };
   }> {
-    const sessions = await this.findAll();
+    const sessions = await this.findAll(apiKey);
     const byStatus: Record<string, number> = {};
 
     for (const session of sessions) {
       byStatus[session.status] = (byStatus[session.status] || 0) + 1;
     }
 
+    const active = sessions.filter(s => this.engines.has(s.id)).length;
     const memory = process.memoryUsage();
 
     return {
       total: sessions.length,
-      active: this.engines.size,
+      active,
       ready: byStatus[SessionStatus.READY] || 0,
       disconnected: byStatus[SessionStatus.DISCONNECTED] || 0,
       byStatus,

@@ -1,15 +1,28 @@
-import { Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionService } from './session.service';
 import { CreateSessionDto, SessionResponseDto, QRCodeResponseDto } from './dto';
 import { Session } from './entities/session.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
-import { RequireRole } from '../auth/decorators/auth.decorators';
-import { ApiKeyRole } from '../auth/entities/api-key.entity';
+import { RequireRole, CurrentApiKey } from '../auth/decorators/auth.decorators';
+import { ApiKey, ApiKeyRole } from '../auth/entities/api-key.entity';
+import { OwnershipGuard } from '../auth/guards/ownership.guard';
 
 @ApiTags('sessions')
 @Controller('sessions')
+@UseGuards(OwnershipGuard)
 export class SessionController {
   constructor(
     private readonly sessionService: SessionService,
@@ -32,7 +45,7 @@ export class SessionController {
   }
 
   @Post()
-  @RequireRole(ApiKeyRole.OPERATOR)
+  @RequireRole(ApiKeyRole.CUSTOMER)
   @ApiOperation({ summary: 'Create a new WhatsApp session' })
   @ApiResponse({
     status: 201,
@@ -40,8 +53,17 @@ export class SessionController {
     type: SessionResponseDto,
   })
   @ApiResponse({ status: 409, description: 'Session name already exists' })
-  async create(@Body() dto: CreateSessionDto): Promise<Session> {
-    const session = await this.sessionService.create(dto);
+  async create(@Body() dto: CreateSessionDto, @CurrentApiKey() apiKey: ApiKey): Promise<Session> {
+    const ownerApiKeyId = apiKey?.role === ApiKeyRole.CUSTOMER ? apiKey.id : null;
+
+    if (apiKey?.role === ApiKeyRole.CUSTOMER && apiKey.maxSessions != null) {
+      const owned = await this.sessionService.countByOwner(apiKey.id);
+      if (owned >= apiKey.maxSessions) {
+        throw new ForbiddenException(`Session limit reached (max ${apiKey.maxSessions})`);
+      }
+    }
+
+    const session = await this.sessionService.create(dto, ownerApiKeyId);
     await this.auditService.logInfo(AuditAction.SESSION_CREATED, {
       sessionId: session.id,
       sessionName: session.name,
@@ -56,8 +78,8 @@ export class SessionController {
     description: 'List of sessions',
     type: [SessionResponseDto],
   })
-  async findAll(): Promise<SessionResponseDto[]> {
-    const sessions = await this.sessionService.findAll();
+  async findAll(@CurrentApiKey() apiKey: ApiKey): Promise<SessionResponseDto[]> {
+    const sessions = await this.sessionService.findAll(apiKey);
     return sessions.map(s => this.transformSession(s));
   }
 
@@ -76,7 +98,7 @@ export class SessionController {
   }
 
   @Delete(':id')
-  @RequireRole(ApiKeyRole.OPERATOR)
+  @RequireRole(ApiKeyRole.CUSTOMER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
@@ -92,7 +114,7 @@ export class SessionController {
   }
 
   @Post(':id/start')
-  @RequireRole(ApiKeyRole.OPERATOR)
+  @RequireRole(ApiKeyRole.CUSTOMER)
   @ApiOperation({
     summary: 'Start a session and initialize WhatsApp connection',
   })
@@ -114,7 +136,7 @@ export class SessionController {
   }
 
   @Post(':id/stop')
-  @RequireRole(ApiKeyRole.OPERATOR)
+  @RequireRole(ApiKeyRole.CUSTOMER)
   @ApiOperation({ summary: 'Stop a session and disconnect WhatsApp' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiResponse({
@@ -174,7 +196,7 @@ export class SessionController {
     status: 200,
     description: 'Session statistics including counts and memory usage',
   })
-  async getStats(): Promise<{
+  async getStats(@CurrentApiKey() apiKey: ApiKey): Promise<{
     total: number;
     active: number;
     ready: number;
@@ -182,6 +204,6 @@ export class SessionController {
     byStatus: Record<string, number>;
     memoryUsage: { heapUsed: number; heapTotal: number; rss: number };
   }> {
-    return this.sessionService.getStats();
+    return this.sessionService.getStats(apiKey);
   }
 }

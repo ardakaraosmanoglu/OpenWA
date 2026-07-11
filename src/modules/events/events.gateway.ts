@@ -10,7 +10,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AuthService } from '../auth/auth.service';
+import { ApiKey, ApiKeyRole } from '../auth/entities/api-key.entity';
+import { Session } from '../session/entities/session.entity';
 import type {
   WSClientMessage,
   WSSubscribeRequest,
@@ -35,7 +39,11 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   private logger = new Logger('EventsGateway');
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @InjectRepository(Session, 'data')
+    private readonly sessionRepository: Repository<Session>,
+  ) {}
 
   afterInit() {
     this.logger.log('WebSocket Gateway initialized');
@@ -78,7 +86,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   @SubscribeMessage('message')
-  handleMessage(@ConnectedSocket() client: Socket, @MessageBody() message: WSClientMessage) {
+  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() message: WSClientMessage) {
     switch (message.type) {
       case 'subscribe':
         return this.handleSubscribe(client, message);
@@ -95,12 +103,20 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     }
   }
 
-  private handleSubscribe(client: Socket, message: WSSubscribeRequest): WSSubscribedResponse | WSErrorResponse {
+  private async handleSubscribe(
+    client: Socket,
+    message: WSSubscribeRequest,
+  ): Promise<WSSubscribedResponse | WSErrorResponse> {
     const { sessionId, events, requestId } = message;
 
     // Validate sessionId
     if (!sessionId || typeof sessionId !== 'string') {
       return this.createError('INVALID_SESSION', 'sessionId is required', requestId);
+    }
+
+    const ownershipError = await this.checkCustomerOwnership(client, sessionId, requestId);
+    if (ownershipError) {
+      return ownershipError;
     }
 
     // Validate events
@@ -137,6 +153,28 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       requestId,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  private async checkCustomerOwnership(
+    client: Socket,
+    sessionId: string,
+    requestId?: string,
+  ): Promise<WSErrorResponse | null> {
+    const apiKey = (client.data as { apiKey?: ApiKey }).apiKey;
+    if (!apiKey || apiKey.role !== ApiKeyRole.CUSTOMER) {
+      return null;
+    }
+
+    if (sessionId === '*') {
+      return this.createError('FORBIDDEN', 'Not authorized to subscribe to all sessions', requestId);
+    }
+
+    const session = await this.sessionRepository.findOne({ where: { id: sessionId } });
+    if (!session || session.ownerApiKeyId !== apiKey.id) {
+      return this.createError('FORBIDDEN', 'Not authorized for this session', requestId);
+    }
+
+    return null;
   }
 
   private handleUnsubscribe(client: Socket, message: WSUnsubscribeRequest): WSUnsubscribedResponse {
