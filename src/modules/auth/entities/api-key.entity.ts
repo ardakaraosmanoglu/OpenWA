@@ -4,6 +4,7 @@ export enum ApiKeyRole {
   ADMIN = 'admin',
   OPERATOR = 'operator',
   VIEWER = 'viewer',
+  CUSTOMER = 'customer',
 }
 
 @Entity('api_keys')
@@ -33,6 +34,9 @@ export class ApiKey {
 
   @Column({ type: 'simple-array', nullable: true })
   allowedSessions: string[] | null;
+
+  @Column({ type: 'int', nullable: true })
+  maxSessions: number | null;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

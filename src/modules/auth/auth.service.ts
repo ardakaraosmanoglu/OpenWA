@@ -103,6 +103,7 @@ export class AuthService implements OnModuleInit {
       role: dto.role || ApiKeyRole.OPERATOR,
       allowedIps: dto.allowedIps || null,
       allowedSessions: dto.allowedSessions || null,
+      maxSessions: dto.maxSessions ?? null,
       expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
     });
 
@@ -137,6 +138,7 @@ export class AuthService implements OnModuleInit {
     if (dto.role) apiKey.role = dto.role;
     if (dto.allowedIps !== undefined) apiKey.allowedIps = dto.allowedIps;
     if (dto.allowedSessions !== undefined) apiKey.allowedSessions = dto.allowedSessions;
+    if (dto.maxSessions !== undefined) apiKey.maxSessions = dto.maxSessions;
     if (dto.expiresAt !== undefined) apiKey.expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
 
     return this.apiKeyRepository.save(apiKey);
@@ -259,8 +261,9 @@ export class AuthService implements OnModuleInit {
   hasPermission(apiKey: ApiKey, requiredRole: ApiKeyRole): boolean {
     const roleHierarchy: Record<ApiKeyRole, number> = {
       [ApiKeyRole.VIEWER]: 1,
-      [ApiKeyRole.OPERATOR]: 2,
-      [ApiKeyRole.ADMIN]: 3,
+      [ApiKeyRole.CUSTOMER]: 2,
+      [ApiKeyRole.OPERATOR]: 3,
+      [ApiKeyRole.ADMIN]: 4,
     };
 
     return roleHierarchy[apiKey.role] >= roleHierarchy[requiredRole];

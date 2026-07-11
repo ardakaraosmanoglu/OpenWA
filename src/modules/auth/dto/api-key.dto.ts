@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsDateString, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsDateString, IsInt, Min, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApiKeyRole } from '../entities/api-key.entity';
 
@@ -40,6 +40,15 @@ export class CreateApiKeyDto {
   allowedSessions?: string[];
 
   @ApiPropertyOptional({
+    description: 'Max sessions this key can own (used for customer keys). Null = unlimited.',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxSessions?: number;
+
+  @ApiPropertyOptional({
     description: 'Expiration date (ISO 8601)',
     example: '2027-12-31T23:59:59Z',
   })
@@ -68,6 +77,9 @@ export class ApiKeyResponseDto {
 
   @ApiPropertyOptional()
   allowedSessions?: string[];
+
+  @ApiPropertyOptional()
+  maxSessions?: number;
 
   @ApiProperty()
   isActive: boolean;
@@ -117,6 +129,12 @@ export class UpdateApiKeyDto {
   @IsArray()
   @IsString({ each: true })
   allowedSessions?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxSessions?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
